@@ -1,0 +1,64 @@
+export interface Character {
+  id: string;
+  name: string;
+  avatar: string;        // emoji fallback
+  avatarColor: string;   // hex color for background
+  avatarImage?: string;  // base64 JPEG, max 200x200 — overrides emoji when present
+  description: string;
+  personality: string;
+  background: string;
+  systemPrompt: string;
+  model: string;
+  temperature: number;
+  maxTokens: number;
+  contextMessages: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: string;
+}
+
+export interface ChatSession {
+  characterId: string;
+  messages: ChatMessage[];
+  updatedAt: string;
+}
+
+export interface LMStudioModel {
+  id: string;
+  object: string;
+  created: number;
+  owned_by: string;
+}
+
+export interface LMStudioModelsResponse {
+  object: string;
+  data: LMStudioModel[];
+}
+
+export type ConnectionStatus = 'connected' | 'disconnected' | 'checking';
+
+export const AVATAR_COLORS = [
+  '#007AFF', '#34C759', '#FF9500', '#FF3B30',
+  '#AF52DE', '#FF2D55', '#30B0C7', '#5E5CE6',
+  '#BF5AF2', '#FF6961', '#32ADE6', '#FFD60A'
+];
+
+export const DEFAULT_CHARACTER: Omit<Character, 'id' | 'createdAt' | 'updatedAt'> = {
+  name: '',
+  avatar: '🤖',
+  avatarColor: '#007AFF',
+  description: '',
+  personality: '',
+  background: '',
+  systemPrompt: '',
+  model: '',
+  temperature: 0.7,
+  maxTokens: 2048,
+  contextMessages: 20
+};

@@ -1,0 +1,203 @@
+@use 'sass:color';
+@use 'variables' as *;
+
+// === Dark mode ===
+@mixin dark {
+  @media (prefers-color-scheme: dark) {
+    @content;
+  }
+}
+
+// === Hover (not disabled) ===
+@mixin hover {
+  &:hover:not(:disabled):not([aria-disabled="true"]) {
+    @content;
+  }
+}
+
+// === Button base ===
+@mixin btn-reset {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+@mixin btn-primary {
+  @include btn-reset;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  padding: $space-2 $space-5;
+  background: $color-accent;
+  color: #FFFFFF;
+  border-radius: $radius-full;
+  font-family: $font-sans;
+  font-size: $fs-callout;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: all $transition-fast;
+
+  @include hover {
+    background: color.adjust($color-accent, $lightness: -8%);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+@mixin btn-secondary {
+  @include btn-reset;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  padding: $space-2 $space-5;
+  background: $color-fill;
+  color: $color-label;
+  border-radius: $radius-full;
+  font-family: $font-sans;
+  font-size: $fs-callout;
+  font-weight: 500;
+  transition: all $transition-fast;
+
+  @include hover {
+    background: rgba(120, 120, 128, 0.3);
+  }
+
+  @include dark {
+    background: rgba(120, 120, 128, 0.36);
+    color: #FFFFFF;
+  }
+}
+
+@mixin btn-ghost {
+  @include btn-reset;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+  color: $color-accent;
+  border-radius: $radius-md;
+  font-family: $font-sans;
+  font-size: $fs-callout;
+  font-weight: 500;
+  transition: all $transition-fast;
+
+  @include hover {
+    background: rgba($color-accent, 0.1);
+  }
+}
+
+@mixin btn-destructive {
+  @include btn-reset;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-5;
+  background: rgba($color-accent-red, 0.12);
+  color: $color-accent-red;
+  border-radius: $radius-full;
+  font-family: $font-sans;
+  font-size: $fs-callout;
+  font-weight: 500;
+  transition: all $transition-fast;
+
+  @include hover {
+    background: $color-accent-red;
+    color: #FFFFFF;
+  }
+}
+
+// === Card ===
+@mixin card {
+  background: $color-surface;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-md;
+
+  @include dark {
+    background: #1C1C1E;
+  }
+}
+
+@mixin card-hover {
+  @include card;
+  transition: box-shadow $transition-normal, transform $transition-normal;
+
+  @include hover {
+    box-shadow: $shadow-lg;
+    transform: translateY(-2px);
+  }
+}
+
+// === Input ===
+@mixin input-base {
+  width: 100%;
+  padding: $space-3 $space-4;
+  background: $color-fill;
+  border: 1.5px solid transparent;
+  border-radius: $radius-md;
+  font-family: $font-sans;
+  font-size: $fs-body;
+  color: $color-label;
+  transition: all $transition-fast;
+  outline: none;
+
+  &::placeholder {
+    color: $color-label-tertiary;
+  }
+
+  &:focus {
+    background: $color-surface;
+    border-color: $color-accent;
+    box-shadow: 0 0 0 3px rgba($color-accent, 0.18);
+  }
+
+  @include dark {
+    background: rgba(120, 120, 128, 0.36);
+    color: #FFFFFF;
+
+    &:focus {
+      background: #2C2C2E;
+    }
+  }
+}
+
+// === Section label ===
+@mixin section-label {
+  font-size: $fs-footnote;
+  font-weight: 600;
+  color: $color-label-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+// === Truncate ===
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// === Glass effect ===
+@mixin glass {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+
+  @include dark {
+    background: rgba(28, 28, 30, 0.8);
+  }
+}
