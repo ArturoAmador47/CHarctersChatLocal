@@ -25,10 +25,7 @@ create table if not exists messages (
   character_id  text not null references characters(id) on delete cascade,
   role          text not null,
   content       text not null,
-  timestamp     timestamptz not null default now(),
-  image_url     text,
-  image_status  text,
-  image_prompt  text
+  timestamp     timestamptz not null default now()
 );
 
 create index if not exists idx_messages_char

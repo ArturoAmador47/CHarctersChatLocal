@@ -5,8 +5,14 @@
   import type { Character } from '$lib/types';
   import { DEFAULT_CHARACTER } from '$lib/types';
 
-  function handleSave(character: Character) {
-    characterStore.add(character);
+  // Only leave the form once the character is actually persisted — a failed
+  // save keeps the user here with their input intact (the store toasts why).
+  async function handleSave(character: Character) {
+    try {
+      await characterStore.add(character);
+    } catch {
+      return;
+    }
     goto('/characters');
   }
 </script>

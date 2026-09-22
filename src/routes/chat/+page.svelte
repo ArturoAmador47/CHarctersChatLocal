@@ -19,7 +19,15 @@
           class="character-item__avatar"
           style="background-color: {character.avatarColor}20"
         >
-          {character.avatar}
+          {#if character.avatarImage}
+            <img
+              src={character.avatarImage}
+              alt={character.name}
+              class="character-item__avatar-img"
+            />
+          {:else}
+            {character.avatar}
+          {/if}
         </div>
         <div class="character-item__info">
           <span class="character-item__name">{character.name}</span>
@@ -50,6 +58,11 @@
     padding: $space-8;
     gap: $space-4;
     text-align: center;
+
+    @include mobile {
+      padding: $space-6 $space-4;
+      justify-content: flex-start;
+    }
   }
 
   .select-page__icon { font-size: 3rem; }
@@ -107,6 +120,14 @@
     justify-content: center;
     font-size: 1.5rem;
     flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .character-item__avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
 
   .character-item__info {

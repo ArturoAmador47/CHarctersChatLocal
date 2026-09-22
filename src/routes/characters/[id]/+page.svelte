@@ -8,13 +8,23 @@
   const id = $derived(page.params.id ?? '');
   const character = $derived(characterStore.getById(id));
 
-  function handleSave(updated: Character) {
-    characterStore.update(id, updated);
+  // Only leave the form once the write actually landed — a failure keeps the
+  // user here with their input intact (the store toasts why).
+  async function handleSave(updated: Character) {
+    try {
+      await characterStore.update(id, updated);
+    } catch {
+      return;
+    }
     goto('/characters');
   }
 
-  function handleDelete() {
-    characterStore.remove(id);
+  async function handleDelete() {
+    try {
+      await characterStore.remove(id);
+    } catch {
+      return;
+    }
     goto('/characters');
   }
 </script>

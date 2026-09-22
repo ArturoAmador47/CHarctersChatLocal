@@ -82,6 +82,11 @@
     align-items: center;
     justify-content: space-between;
     gap: $space-4;
+
+    @include mobile {
+      padding: $space-4;
+      gap: $space-3;
+    }
   }
 
   .page__title {
@@ -102,6 +107,12 @@
     @include btn-primary;
     text-decoration: none;
     display: inline-flex;
+    white-space: nowrap;
+
+    @include mobile {
+      padding: $space-2 $space-3;
+      font-size: $fs-subheadline;
+    }
   }
 
   .page__content {
@@ -110,6 +121,10 @@
     width: 100%;
     margin: 0 auto;
     padding: $space-8;
+
+    @include mobile {
+      padding: $space-4;
+    }
   }
 
   .empty {
@@ -146,7 +161,8 @@
 
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    // min() keeps the 320px track from overflowing viewports narrower than that.
+    grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
     gap: $space-4;
   }
 

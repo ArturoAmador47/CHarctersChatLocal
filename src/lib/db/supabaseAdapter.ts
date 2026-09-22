@@ -14,8 +14,6 @@ interface CharacterRow {
 interface MessageRow {
   id: string; character_id: string; role: string;
   content: string; timestamp: string;
-  image_url: string | null; image_status: string | null;
-  image_prompt: string | null;
 }
 
 function rowToCharacter(r: CharacterRow): Character {
@@ -66,10 +64,7 @@ function rowToMessage(r: MessageRow): ChatMessage {
     id: r.id,
     role: r.role as ChatMessage['role'],
     content: r.content,
-    timestamp: r.timestamp,
-    imageUrl: r.image_url ?? undefined,
-    imageStatus: (r.image_status as ChatMessage['imageStatus']) ?? undefined,
-    imagePrompt: r.image_prompt ?? undefined
+    timestamp: r.timestamp
   };
 }
 
@@ -139,10 +134,7 @@ export class SupabaseAdapter implements StorageAdapter {
       character_id: characterId,
       role: msg.role,
       content: msg.content,
-      timestamp: msg.timestamp,
-      image_url: msg.imageUrl ?? null,
-      image_status: msg.imageStatus ?? null,
-      image_prompt: msg.imagePrompt ?? null
+      timestamp: msg.timestamp
     });
     if (error) throw error;
   }

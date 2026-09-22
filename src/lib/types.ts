@@ -21,24 +21,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: string;
-  // Image generation fields
-  imageUrl?: string;              // data:image/png;base64,...
-  imageStatus?: 'generating' | 'complete' | 'error';
-  imagePrompt?: string;           // Prompt used for generation
-  imageProgress?: number;         // 0-100 progress percentage
 }
-
-export interface ComfyUIWorkflowConfig {
-  checkpointModel: string;
-  sampler: string;
-  steps: number;
-  cfgScale: number;
-  width: number;
-  height: number;
-  seed?: number;
-}
-
-export type ComfyUIConnectionStatus = 'connected' | 'disconnected' | 'checking';
 
 export interface ChatSession {
   characterId: string;

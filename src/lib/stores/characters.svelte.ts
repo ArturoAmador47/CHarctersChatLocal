@@ -1,4 +1,6 @@
 import { getStorage } from '$lib/db';
+import { describeDbError } from '$lib/db/errors';
+import { toastStore } from '$lib/stores/toasts.svelte';
 import type { Character } from '$lib/types';
 
 function createCharacterStore() {
@@ -12,6 +14,8 @@ function createCharacterStore() {
       const db = await getStorage();
       characters = await db.getCharacters();
       initialized = true;
+    } catch (err) {
+      toastStore.error("Couldn't load your characters", describeDbError(err));
     } finally {
       loading = false;
     }
@@ -19,13 +23,23 @@ function createCharacterStore() {
 
   async function add(char: Character) {
     const db = await getStorage();
-    await db.saveCharacter(char);
+    try {
+      await db.saveCharacter(char);
+    } catch (err) {
+      toastStore.error(`"${char.name}" wasn't saved`, describeDbError(err));
+      throw err;
+    }
     characters = [char, ...characters];
   }
 
   async function update(id: string, patch: Partial<Character>) {
     const db = await getStorage();
-    await db.updateCharacter(id, patch);
+    try {
+      await db.updateCharacter(id, patch);
+    } catch (err) {
+      toastStore.error("Your changes weren't saved", describeDbError(err));
+      throw err;
+    }
     characters = characters.map(c =>
       c.id === id ? { ...c, ...patch, updatedAt: new Date().toISOString() } : c
     );
@@ -33,7 +47,12 @@ function createCharacterStore() {
 
   async function remove(id: string) {
     const db = await getStorage();
-    await db.deleteCharacter(id);
+    try {
+      await db.deleteCharacter(id);
+    } catch (err) {
+      toastStore.error("The character wasn't deleted", describeDbError(err));
+      throw err;
+    }
     characters = characters.filter(c => c.id !== id);
   }
 

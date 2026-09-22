@@ -70,7 +70,7 @@
             {character.avatar}
           {/if}
         </div>
-        <div>
+        <div class="chat__character-text">
           <h2 class="chat__character-name">{character.name}</h2>
           {#if character.description}
             <p class="chat__character-desc">{character.description}</p>
@@ -182,6 +182,12 @@
     padding: $space-4 $space-6;
     border-bottom: 1px solid var(--color-separator);
     flex-shrink: 0;
+
+    @include mobile {
+      gap: $space-2;
+      padding: $space-3 $space-4;
+      padding-top: calc(#{$space-3} + env(safe-area-inset-top));
+    }
   }
 
   .chat__back {
@@ -214,6 +220,12 @@
     font-size: 1.4rem;
     flex-shrink: 0;
     overflow: hidden;
+
+    @include mobile {
+      width: 34px;
+      height: 34px;
+      font-size: 1.2rem;
+    }
   }
 
   .chat__character-avatar-img {
@@ -221,6 +233,15 @@
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+
+  // Without min-width: 0 this flex child refuses to shrink, so the truncation
+  // on the name/description below never kicks in and the text overflows.
+  .chat__character-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
   }
 
   .chat__character-name {
@@ -236,6 +257,10 @@
     font-size: $fs-caption;
     color: var(--color-label-secondary);
     @include truncate;
+
+    @include mobile {
+      font-size: 11px;
+    }
   }
 
   .chat__header-actions {
@@ -274,6 +299,11 @@
     flex-direction: column;
     gap: $space-4;
     scroll-behavior: smooth;
+
+    @include mobile {
+      padding: $space-4 $space-3;
+      gap: $space-3;
+    }
   }
 
   .chat__empty {
@@ -285,6 +315,10 @@
     text-align: center;
     gap: $space-4;
     padding: $space-16 $space-8;
+
+    @include mobile {
+      padding: $space-8 $space-4;
+    }
   }
 
   .chat__empty-avatar {
@@ -330,6 +364,11 @@
     flex-direction: column;
     gap: $space-2;
     flex-shrink: 0;
+
+    @include mobile {
+      padding: $space-3 $space-3;
+      padding-bottom: calc(#{$space-3} + env(safe-area-inset-bottom));
+    }
   }
 
   .chat__input-wrap {
@@ -420,6 +459,11 @@
     font-size: $fs-caption;
     color: var(--color-label-quaternary);
     text-align: center;
+
+    // Keyboard shortcuts don't apply on a touch keyboard.
+    @include mobile {
+      display: none;
+    }
   }
 
   // Not found

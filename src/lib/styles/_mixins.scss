@@ -8,6 +8,13 @@
   }
 }
 
+// === Phone-sized viewports ===
+@mixin mobile {
+  @media (max-width: $bp-mobile) {
+    @content;
+  }
+}
+
 // === Hover (not disabled) ===
 @mixin hover {
   &:hover:not(:disabled):not([aria-disabled="true"]) {

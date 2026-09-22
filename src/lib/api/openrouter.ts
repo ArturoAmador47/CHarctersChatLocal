@@ -29,6 +29,42 @@ export async function checkConnection(): Promise<boolean> {
   }
 }
 
+/** Turns an OpenRouter HTTP failure into something a user can act on. */
+async function describeHttpError(res: Response, model: string): Promise<string> {
+  let apiMessage = '';
+  try {
+    const body = await res.json();
+    apiMessage = body?.error?.message ?? body?.message ?? '';
+  } catch {
+    // Non-JSON body — fall through to the status-based message.
+  }
+
+  switch (res.status) {
+    // OpenRouter reports an unknown model id as 400, not 404.
+    case 400:
+      return apiMessage || 'OpenRouter rejected the request.';
+    case 401:
+      return 'Invalid or missing OpenRouter API key. Check API_KEY in your .env file.';
+    case 402:
+      return 'Your OpenRouter account is out of credits. Add credits to keep chatting.';
+    case 403:
+      return apiMessage || 'OpenRouter refused this request. The model may require extra access.';
+    case 404:
+      return `Model "${model}" is not available on OpenRouter. Pick another one in the character settings.`;
+    case 408:
+      return 'OpenRouter timed out. Try again.';
+    case 429:
+      return 'Rate limited by OpenRouter. Wait a few seconds and try again.';
+    case 502:
+    case 503:
+      return `The provider behind "${model}" is unavailable right now. Try again or pick another model.`;
+    default:
+      return apiMessage
+        ? `OpenRouter error (${res.status}): ${apiMessage}`
+        : `OpenRouter returned HTTP ${res.status}.`;
+  }
+}
+
 export interface StreamChatOptions {
   model: string;
   messages: ChatMessage[];
@@ -45,7 +81,12 @@ export async function streamChat(opts: StreamChatOptions): Promise<void> {
 
   const apiKey = import.meta.env.API_KEY as string | undefined;
   if (!apiKey) {
-    onError('Missing OpenRouter API key (set API_KEY in .env)');
+    onError('No OpenRouter API key configured. Add API_KEY to your .env file and restart the dev server.');
+    return;
+  }
+
+  if (!model) {
+    onError('This character has no model selected. Edit the character and pick one.');
     return;
   }
 
@@ -69,28 +110,31 @@ export async function streamChat(opts: StreamChatOptions): Promise<void> {
       signal
     });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Connection failed';
-    onError(msg);
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      onDone();
+      return;
+    }
+    onError("Couldn't reach OpenRouter. Check your internet connection and try again.");
     return;
   }
 
   if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    onError(`OpenRouter error: HTTP ${res.status}${body ? ` — ${body}` : ''}`);
+    onError(await describeHttpError(res, model));
     return;
   }
 
   const reader = res.body?.getReader();
   if (!reader) {
-    onError('No response body');
+    onError('OpenRouter returned an empty response.');
     return;
   }
 
   const decoder = new TextDecoder();
   let buffer = '';
+  let streamError = '';
 
   try {
-    while (true) {
+    stream: while (true) {
       const { done, value } = await reader.read();
       if (done) break;
 
@@ -103,13 +147,15 @@ export async function streamChat(opts: StreamChatOptions): Promise<void> {
         if (!trimmed.startsWith('data: ')) continue;
 
         const data = trimmed.slice(6);
-        if (data === '[DONE]') {
-          onDone();
-          return;
-        }
+        if (data === '[DONE]') break stream;
 
         try {
           const parsed = JSON.parse(data);
+          // Providers can report a mid-stream failure instead of closing.
+          if (parsed.error) {
+            streamError = parsed.error.message ?? 'The model stopped mid-response.';
+            break stream;
+          }
           const content = parsed.choices?.[0]?.delta?.content;
           if (content) onChunk(content);
         } catch {
@@ -117,8 +163,13 @@ export async function streamChat(opts: StreamChatOptions): Promise<void> {
         }
       }
     }
+  } catch (err: unknown) {
+    if (!(err instanceof DOMException && err.name === 'AbortError')) {
+      streamError = 'The connection to OpenRouter dropped mid-response.';
+    }
   } finally {
     reader.releaseLock();
-    onDone();
+    if (streamError) onError(streamError);
+    else onDone();
   }
 }

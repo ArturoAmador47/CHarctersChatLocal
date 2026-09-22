@@ -3,13 +3,15 @@
   import { characterStore } from '$lib/stores/characters.svelte';
   import { modelsStore } from '$lib/stores/models.svelte';
 
+  let { hideOnMobile = false }: { hideOnMobile?: boolean } = $props();
+
   const navItems = [
     { href: '/characters', label: 'Characters', icon: '🎭' },
     { href: '/chat', label: 'Chats', icon: '💬' }
   ];
 </script>
 
-<aside class="sidebar">
+<aside class="sidebar" class:sidebar--hide-mobile={hideOnMobile}>
   <!-- App Header -->
   <div class="sidebar__header">
     <div class="sidebar__logo">
@@ -81,11 +83,37 @@
     position: sticky;
     top: 0;
     overflow: hidden;
+
+    // On phones the sidebar becomes a fixed bottom tab bar.
+    @include mobile {
+      flex-direction: row;
+      align-items: center;
+      width: 100%;
+      min-width: 0;
+      height: auto;
+      min-height: $bottom-nav-height;
+      padding-bottom: env(safe-area-inset-bottom);
+      position: fixed;
+      top: auto;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+
+      &--hide-mobile {
+        display: none;
+      }
+    }
   }
 
   .sidebar__header {
     padding: $space-6 $space-5 $space-4;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+    @include mobile {
+      display: none;
+    }
   }
 
   .sidebar__logo {
@@ -113,6 +141,14 @@
     flex-direction: column;
     gap: $space-1;
     overflow-y: auto;
+
+    @include mobile {
+      flex-direction: row;
+      align-items: center;
+      padding: $space-2;
+      gap: $space-2;
+      overflow: visible;
+    }
   }
 
   .sidebar__section-label {
@@ -120,6 +156,10 @@
     color: rgba(235, 235, 245, 0.4);
     padding: 0 $space-3;
     margin-bottom: $space-2;
+
+    @include mobile {
+      display: none;
+    }
   }
 
   .sidebar__item {
@@ -144,6 +184,15 @@
       background: $color-sidebar-item-active;
       color: #FFFFFF;
     }
+
+    @include mobile {
+      flex: 1;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
+      padding: $space-2 $space-1;
+      min-height: 44px;
+    }
   }
 
   .sidebar__item-icon {
@@ -154,6 +203,11 @@
 
   .sidebar__item-label {
     flex: 1;
+
+    @include mobile {
+      flex: none;
+      font-size: $fs-caption;
+    }
   }
 
   .sidebar__badge {
@@ -163,11 +217,27 @@
     background: rgba(255, 255, 255, 0.08);
     padding: 2px 7px;
     border-radius: $radius-full;
+
+    @include mobile {
+      position: absolute;
+      top: 2px;
+      left: 50%;
+      margin-left: 6px;
+      font-size: 10px;
+      padding: 1px 5px;
+      line-height: 1.4;
+    }
   }
 
   .sidebar__footer {
     padding: $space-4;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
+
+    @include mobile {
+      padding: $space-2 $space-3 $space-2 0;
+      border-top: none;
+      flex-shrink: 0;
+    }
   }
 
   .sidebar__connection {
@@ -177,6 +247,11 @@
     padding: $space-3;
     border-radius: $radius-md;
     background: rgba(255, 255, 255, 0.04);
+
+    @include mobile {
+      gap: $space-2;
+      padding: $space-2;
+    }
   }
 
   .sidebar__connection-dot {
@@ -209,6 +284,11 @@
     display: flex;
     flex-direction: column;
     gap: 1px;
+
+    // Only the status dot and refresh button survive in the bottom bar.
+    @include mobile {
+      display: none;
+    }
   }
 
   .sidebar__connection-label {

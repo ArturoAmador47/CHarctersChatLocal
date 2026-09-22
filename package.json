@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
-    "@tauri-apps/api": "2"
+    "@tauri-apps/api": "2",
+    "thinking-orbs-universal": "^1.1.0"
   }
 }
