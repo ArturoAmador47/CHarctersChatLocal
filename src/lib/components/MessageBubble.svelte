@@ -1,5 +1,6 @@
 <script lang="ts">
   import ThinkingOrb from '$lib/components/ThinkingOrb.svelte';
+  import { parseRoleplay } from '$lib/utils/roleplay';
   import type { ChatMessage } from '$lib/types';
 
   let {
@@ -15,6 +16,8 @@
     characterColor?: string;
     isStreaming?: boolean;
   } = $props();
+
+  const segments = $derived(parseRoleplay(message.content));
 
   function formatTime(iso: string): string {
     return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -38,12 +41,13 @@
         <ThinkingOrb orbState="composing" size={20} label="Thinking…" />
       </div>
     {:else if message.content}
-      <div class="bubble__text" class:bubble__text--streaming={isStreaming && message.role === 'assistant'}>
-        {message.content}
-        {#if isStreaming && message.role === 'assistant'}
-          <span class="bubble__cursor"></span>
-        {/if}
-      </div>
+      <!-- Rendered as text nodes and <em> elements — never innerHTML, so model
+           output can't inject markup. Kept on one line because the bubble uses
+           white-space: pre-wrap and would show any template whitespace. -->
+      <div
+        class="bubble__text"
+        class:bubble__text--streaming={isStreaming && message.role === 'assistant'}
+      >{#each segments as segment}{#if segment.kind === 'action'}<em class="bubble__action">{segment.value}</em>{:else}{segment.value}{/if}{/each}{#if isStreaming && message.role === 'assistant'}<span class="bubble__cursor"></span>{/if}</div>
     {/if}
 
     {#if message.content}
@@ -59,9 +63,10 @@
   .bubble {
     display: flex;
     gap: $space-3;
-    max-width: 80%;
+    // Cap the measure on wide screens so lines stay readable.
+    max-width: min(80%, 700px);
     min-width: 0;
-    align-items: flex-end;
+    align-items: flex-start;
     animation: fadeIn 200ms ease-out;
 
     &--user {
@@ -93,7 +98,6 @@
     justify-content: center;
     font-size: 1rem;
     flex-shrink: 0;
-    margin-bottom: 20px;
     overflow: hidden;
   }
 
@@ -107,7 +111,7 @@
   .bubble__content {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
     min-width: 0;
   }
 
@@ -137,6 +141,21 @@
     }
   }
 
+  // Roleplay actions (*te toma de la mano*) read as stage direction, not dialogue.
+  .bubble__action {
+    font-style: italic;
+    color: $color-label-tertiary;
+
+    @include dark {
+      color: #9a9aa3;
+    }
+
+    // On the accent-filled user bubble a grey would muddy; dim the white instead.
+    .bubble--user & {
+      color: rgba(255, 255, 255, 0.72);
+    }
+  }
+
   .bubble__text--pending {
     display: inline-flex;
     align-items: center;
@@ -162,8 +181,9 @@
 
   .bubble__time {
     font-size: $fs-caption;
+    line-height: 1.2;
     color: var(--color-label-tertiary);
-    padding: 0 $space-1;
+    padding: 0 $space-3;
 
     .bubble--user & {
       text-align: right;
