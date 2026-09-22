@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { tick, onMount } from 'svelte';
+  import { tick, onMount, untrack } from 'svelte';
   import { characterStore } from '$lib/stores/characters.svelte';
   import { chatStore } from '$lib/stores/chat.svelte';
   import MessageBubble from '$lib/components/MessageBubble.svelte';
@@ -14,9 +14,13 @@
   );
   const isStreaming = $derived(!!characterId && chatStore.streamingCharacterId === characterId);
 
+  // How far from the bottom still counts as "following the conversation".
+  const AT_BOTTOM_SLACK_PX = 80;
+
   let inputText = $state('');
   let messagesEl = $state<HTMLElement | null>(null);
   let historyLoaded = $state(false);
+  let atBottom = $state(true);
 
   onMount(async () => {
     if (characterId) {
@@ -25,19 +29,31 @@
     }
   });
 
-  // Auto-scroll when messages change
+  function scrollToBottom(behavior: ScrollBehavior = 'smooth') {
+    messagesEl?.scrollTo({ top: messagesEl.scrollHeight, behavior });
+  }
+
+  function handleScroll() {
+    if (!messagesEl) return;
+    const distance = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight;
+    atBottom = distance <= AT_BOTTOM_SLACK_PX;
+  }
+
+  // Follow new messages only while the user is already at the bottom, so
+  // scrolling up to re-read history isn't yanked away mid-stream.
   $effect(() => {
-    if (messages.length) {
-      tick().then(() => {
-        messagesEl?.scrollTo({ top: messagesEl.scrollHeight, behavior: 'smooth' });
-      });
-    }
+    if (!messages.length) return;
+    void messages;
+    if (!untrack(() => atBottom)) return;
+    tick().then(() => scrollToBottom('smooth'));
   });
 
   async function sendMessage() {
     if (!character || !inputText.trim() || isStreaming) return;
     const text = inputText;
     inputText = '';
+    // Sending is an explicit action — always jump back to the live end.
+    atBottom = true;
     await chatStore.send(character, text);
   }
 
@@ -93,7 +109,7 @@
     </header>
 
     <!-- Messages -->
-    <div class="chat__messages" bind:this={messagesEl}>
+    <div class="chat__messages" bind:this={messagesEl} onscroll={handleScroll}>
       {#if messages.length === 0}
         <div class="chat__empty">
           <div class="chat__empty-avatar" style="background-color: {character.avatarColor}20">
@@ -121,6 +137,19 @@
         {/each}
       {/if}
     </div>
+
+    <!-- Jump back to the newest message -->
+    {#if !atBottom && messages.length > 0}
+      <button
+        class="chat__to-bottom"
+        onclick={() => scrollToBottom('smooth')}
+        type="button"
+        title="Scroll to latest"
+        aria-label="Scroll to latest message"
+      >
+        ↓
+      </button>
+    {/if}
 
     <!-- Input bar -->
     <div class="chat__input-bar">
@@ -168,8 +197,10 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    height: 100dvh;
+    height: 100%;
+    min-height: 0;
     overflow: hidden;
+    position: relative;
   }
 
   // Header
@@ -293,8 +324,11 @@
 
   .chat__messages {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    padding: $space-6;
+    overscroll-behavior: contain;
+    // Bottom padding clears the floating input bar that overlays this pane.
+    padding: $space-6 $space-6 104px;
     display: flex;
     flex-direction: column;
     gap: $space-4;
@@ -302,6 +336,7 @@
 
     @include mobile {
       padding: $space-4 $space-3;
+      padding-bottom: calc(92px + env(safe-area-inset-bottom));
       gap: $space-3;
     }
   }
@@ -354,16 +389,102 @@
     line-height: 1.5;
   }
 
+  // Jump-to-latest button
+
+  .chat__to-bottom {
+    @include btn-reset;
+    position: absolute;
+    bottom: 112px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 25;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-label);
+
+    background: rgba(255, 255, 255, 0.62);
+    backdrop-filter: blur(28px) saturate(1.9);
+    -webkit-backdrop-filter: blur(28px) saturate(1.9);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    box-shadow:
+      0 6px 20px rgba(0, 0, 0, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    transition: all $transition-fast;
+    animation: toBottomIn 150ms ease-out;
+
+    &:hover {
+      background: $color-accent;
+      color: #FFFFFF;
+      border-color: transparent;
+    }
+
+    @include dark {
+      background: rgba(44, 44, 48, 0.62);
+      border-color: rgba(255, 255, 255, 0.14);
+      box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    @include mobile {
+      bottom: calc(100px + env(safe-area-inset-bottom));
+    }
+  }
+
+  @keyframes toBottomIn {
+    from { opacity: 0; transform: translate(-50%, 6px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+  }
+
   // Input bar
 
+  // Floats over the conversation so messages scroll behind the glass.
   .chat__input-bar {
-    @include glass;
-    border-top: 1px solid var(--color-separator);
-    padding: $space-4 $space-6;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    padding: $space-3 $space-6 $space-4;
     display: flex;
     flex-direction: column;
     gap: $space-2;
-    flex-shrink: 0;
+    pointer-events: none;
+
+    // Soft scrim so text passing underneath never collides with the pill.
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -$space-8 0 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(245, 245, 247, 0) 0%,
+        rgba(245, 245, 247, 0.75) 55%,
+        rgba(245, 245, 247, 0.95) 100%
+      );
+      pointer-events: none;
+      z-index: -1;
+
+      @include dark {
+        background: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0) 0%,
+          rgba(0, 0, 0, 0.75) 55%,
+          rgba(0, 0, 0, 0.95) 100%
+        );
+      }
+    }
+
+    // Children stay interactive even though the bar itself lets clicks through.
+    > * {
+      pointer-events: auto;
+    }
 
     @include mobile {
       padding: $space-3 $space-3;
@@ -371,27 +492,45 @@
     }
   }
 
+  // Liquid glass pill, after the iOS Messages compose field.
   .chat__input-wrap {
     display: flex;
     align-items: flex-end;
-    gap: $space-3;
-    background: var(--color-fill);
-    border: 1.5px solid transparent;
-    border-radius: $radius-xl;
-    padding: $space-2 $space-3;
-    transition: all $transition-fast;
+    gap: $space-2;
+    padding: $space-2 $space-2 $space-2 $space-4;
+    border-radius: $radius-full;
+
+    background: rgba(255, 255, 255, 0.62);
+    backdrop-filter: blur(28px) saturate(1.9);
+    -webkit-backdrop-filter: blur(28px) saturate(1.9);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    box-shadow:
+      0 8px 28px rgba(0, 0, 0, 0.12),
+      0 1px 2px rgba(0, 0, 0, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    transition: box-shadow $transition-normal, border-color $transition-normal;
 
     &:focus-within {
-      background: var(--color-surface);
-      border-color: $color-accent;
-      box-shadow: 0 0 0 3px rgba($color-accent, 0.18);
+      border-color: rgba($color-accent, 0.55);
+      box-shadow:
+        0 10px 32px rgba(0, 0, 0, 0.16),
+        0 0 0 3px rgba($color-accent, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
     }
 
     @include dark {
-      background: rgba(120, 120, 128, 0.36);
+      background: rgba(44, 44, 48, 0.58);
+      border-color: rgba(255, 255, 255, 0.14);
+      box-shadow:
+        0 8px 28px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
 
       &:focus-within {
-        background: #2C2C2E;
+        border-color: rgba($color-accent, 0.6);
+        box-shadow:
+          0 10px 32px rgba(0, 0, 0, 0.55),
+          0 0 0 3px rgba($color-accent, 0.22),
+          inset 0 1px 0 rgba(255, 255, 255, 0.12);
       }
     }
   }
@@ -425,7 +564,6 @@
     font-size: 1rem;
     font-weight: 700;
     flex-shrink: 0;
-    margin-bottom: 2px;
     transition: all $transition-fast;
   }
 

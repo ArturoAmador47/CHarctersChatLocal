@@ -31,9 +31,12 @@
   @use '$lib/styles/variables' as *;
   @use '$lib/styles/mixins' as *;
 
+  // Fixed app shell: the viewport never scrolls, each pane scrolls internally.
+  // Without this the chat column can overflow and push its input bar off-screen.
   .shell {
     display: flex;
-    min-height: 100dvh;
+    height: 100dvh;
+    overflow: hidden;
 
     @include mobile {
       flex-direction: column;
@@ -43,7 +46,9 @@
   .shell__main {
     flex: 1;
     min-width: 0;
+    min-height: 0;
     overflow-x: hidden;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
 
