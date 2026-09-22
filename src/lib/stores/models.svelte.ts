@@ -1,8 +1,8 @@
-import { fetchModels, checkConnection } from '$lib/api/lmstudio';
-import type { ConnectionStatus, LMStudioModel } from '$lib/types';
+import { fetchModels, checkConnection } from '$lib/api/openrouter';
+import type { ConnectionStatus, OpenRouterModel } from '$lib/types';
 
 function createModelsStore() {
-  let models = $state<LMStudioModel[]>([]);
+  let models = $state<OpenRouterModel[]>([]);
   let status = $state<ConnectionStatus>('disconnected');
   let lastChecked = $state<Date | null>(null);
 

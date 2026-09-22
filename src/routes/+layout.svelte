@@ -1,15 +1,21 @@
 <script lang="ts">
   import '../app.css';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
   import { characterStore } from '$lib/stores/characters.svelte';
   import { modelsStore } from '$lib/stores/models.svelte';
+  import { comfyuiStore } from '$lib/stores/comfyui.svelte';
 
   let { children } = $props();
 
   onMount(() => {
     characterStore.load();
     modelsStore.refresh();
+    comfyuiStore.startPeriodicCheck();
+  });
+
+  onDestroy(() => {
+    comfyuiStore.stopPeriodicCheck();
   });
 </script>
 

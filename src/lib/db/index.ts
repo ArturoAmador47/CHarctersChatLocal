@@ -1,8 +1,8 @@
 /**
  * Database abstraction layer.
  *
- * In Tauri: uses SQLite via @tauri-apps/plugin-sql (persistent, fast, no size limits).
- * In browser: falls back to localStorage (dev mode / web build).
+ * Backed by Supabase (Postgres) — see supabase/schema.sql for the table
+ * definitions and src/lib/db/supabaseClient.ts for the client setup.
  */
 
 import type { Character, ChatMessage } from '$lib/types';
@@ -23,14 +23,6 @@ export interface StorageAdapter {
   appendMessage(characterId: string, msg: ChatMessage): Promise<void>;
   updateLastMessage(characterId: string, content: string): Promise<void>;
   deleteMessages(characterId: string): Promise<void>;
-
-  // Migration: import from localStorage on first run in Tauri
-  importFromLocalStorage?(): Promise<void>;
-}
-
-/** Detect Tauri runtime (not available in SSR or plain browser build) */
-export function isTauri(): boolean {
-  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 }
 
 let _adapter: StorageAdapter | null = null;
@@ -38,14 +30,8 @@ let _adapter: StorageAdapter | null = null;
 export async function getStorage(): Promise<StorageAdapter> {
   if (_adapter) return _adapter;
 
-  if (isTauri()) {
-    const { SQLiteAdapter } = await import('./sqlite');
-    _adapter = new SQLiteAdapter();
-  } else {
-    const { LocalStorageAdapter } = await import('./localstorage');
-    _adapter = new LocalStorageAdapter();
-  }
-
+  const { SupabaseAdapter } = await import('./supabaseAdapter');
+  _adapter = new SupabaseAdapter();
   await _adapter.init();
   return _adapter;
 }

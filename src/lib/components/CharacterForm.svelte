@@ -406,7 +406,7 @@
             <!-- Model -->
             <div class="field">
               <label class="field__label">Model <span class="field__required">*</span></label>
-              <ModelSelector bind:value={model} placeholder="Select model from LM Studio…" />
+              <ModelSelector bind:value={model} placeholder="Select an OpenRouter model…" />
               {#if !model}
                 <p class="field__hint field__hint--warn">A model is required to start chatting.</p>
               {/if}

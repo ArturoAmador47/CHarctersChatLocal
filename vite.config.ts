@@ -20,7 +20,7 @@ export default defineConfig({
       : undefined
   },
 
-  envPrefix: ['VITE_', 'TAURI_ENV_*'],
+  envPrefix: ['VITE_', 'TAURI_ENV_*', 'API_KEY'],
 
   build: {
     // Match Tauri's minimum supported browser target

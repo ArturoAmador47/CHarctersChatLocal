@@ -21,7 +21,24 @@ export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: string;
+  // Image generation fields
+  imageUrl?: string;              // data:image/png;base64,...
+  imageStatus?: 'generating' | 'complete' | 'error';
+  imagePrompt?: string;           // Prompt used for generation
+  imageProgress?: number;         // 0-100 progress percentage
 }
+
+export interface ComfyUIWorkflowConfig {
+  checkpointModel: string;
+  sampler: string;
+  steps: number;
+  cfgScale: number;
+  width: number;
+  height: number;
+  seed?: number;
+}
+
+export type ComfyUIConnectionStatus = 'connected' | 'disconnected' | 'checking';
 
 export interface ChatSession {
   characterId: string;
@@ -29,16 +46,16 @@ export interface ChatSession {
   updatedAt: string;
 }
 
-export interface LMStudioModel {
+export interface OpenRouterModel {
   id: string;
-  object: string;
-  created: number;
-  owned_by: string;
+  name: string;
+  created?: number;
+  description?: string;
+  context_length?: number;
 }
 
-export interface LMStudioModelsResponse {
-  object: string;
-  data: LMStudioModel[];
+export interface OpenRouterModelsResponse {
+  data: OpenRouterModel[];
 }
 
 export type ConnectionStatus = 'connected' | 'disconnected' | 'checking';

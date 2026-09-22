@@ -15,19 +15,19 @@
     <div class="selector__offline">
       <span class="selector__offline-icon">⚠️</span>
       <div>
-        <p class="selector__offline-title">LM Studio not connected</p>
-        <p class="selector__offline-sub">Start LM Studio and load a model</p>
+        <p class="selector__offline-title">OpenRouter not connected</p>
+        <p class="selector__offline-sub">Check your API_KEY in .env</p>
       </div>
       <button class="selector__retry" onclick={() => modelsStore.refresh()}>Retry</button>
     </div>
   {:else if modelsStore.status === 'checking'}
     <div class="selector__loading">
       <span class="selector__spinner"></span>
-      <span>Connecting to LM Studio…</span>
+      <span>Connecting to OpenRouter…</span>
     </div>
   {:else if modelsStore.models.length === 0}
     <div class="selector__empty">
-      <span>No models loaded in LM Studio</span>
+      <span>No models available</span>
       <button class="selector__retry" onclick={() => modelsStore.refresh()}>Refresh</button>
     </div>
   {:else}
@@ -35,7 +35,7 @@
       <select class="selector__select" bind:value>
         <option value="">{placeholder}</option>
         {#each modelsStore.models as model}
-          <option value={model.id}>{model.id}</option>
+          <option value={model.id}>{model.name ?? model.id}</option>
         {/each}
       </select>
       <span class="selector__chevron">⌄</span>

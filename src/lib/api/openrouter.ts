@@ -1,14 +1,23 @@
-import type { ChatMessage, LMStudioModel } from '$lib/types';
+import type { ChatMessage, OpenRouterModel } from '$lib/types';
 
-const BASE_URL = 'http://localhost:1234/v1';
+const BASE_URL = 'https://openrouter.ai/api/v1';
 
-export async function fetchModels(): Promise<LMStudioModel[]> {
+function authHeaders(): Record<string, string> {
+  const apiKey = import.meta.env.API_KEY as string | undefined;
+  return {
+    ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+    'X-Title': 'ChatCharacters'
+  };
+}
+
+export async function fetchModels(): Promise<OpenRouterModel[]> {
   const res = await fetch(`${BASE_URL}/models`, {
+    headers: authHeaders(),
     signal: AbortSignal.timeout(5000)
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
-  return data.data as LMStudioModel[];
+  return data.data as OpenRouterModel[];
 }
 
 export async function checkConnection(): Promise<boolean> {
@@ -34,13 +43,22 @@ export interface StreamChatOptions {
 export async function streamChat(opts: StreamChatOptions): Promise<void> {
   const { model, messages, temperature = 0.7, maxTokens = 2048, onChunk, onDone, onError, signal } = opts;
 
+  const apiKey = import.meta.env.API_KEY as string | undefined;
+  if (!apiKey) {
+    onError('Missing OpenRouter API key (set API_KEY in .env)');
+    return;
+  }
+
   const payload = messages.map((m) => ({ role: m.role, content: m.content }));
 
   let res: Response;
   try {
     res = await fetch(`${BASE_URL}/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders()
+      },
       body: JSON.stringify({
         model,
         messages: payload,
@@ -57,7 +75,8 @@ export async function streamChat(opts: StreamChatOptions): Promise<void> {
   }
 
   if (!res.ok) {
-    onError(`LM Studio error: HTTP ${res.status}`);
+    const body = await res.text().catch(() => '');
+    onError(`OpenRouter error: HTTP ${res.status}${body ? ` — ${body}` : ''}`);
     return;
   }
 
@@ -94,7 +113,7 @@ export async function streamChat(opts: StreamChatOptions): Promise<void> {
           const content = parsed.choices?.[0]?.delta?.content;
           if (content) onChunk(content);
         } catch {
-          // Skip malformed JSON chunks
+          // Skip malformed JSON chunks (e.g. OpenRouter keep-alive comments)
         }
       }
     }

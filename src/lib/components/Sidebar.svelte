@@ -45,7 +45,7 @@
         class:sidebar__connection-dot--checking={modelsStore.status === 'checking'}
       ></div>
       <div class="sidebar__connection-info">
-        <span class="sidebar__connection-label">LM Studio</span>
+        <span class="sidebar__connection-label">OpenRouter</span>
         <span class="sidebar__connection-status">
           {#if modelsStore.status === 'connected'}
             {modelsStore.models.length} model{modelsStore.models.length !== 1 ? 's' : ''}
